@@ -74,15 +74,15 @@ func TestT0(t *testing.T) {
 						Value: term,
 						Children: []*Tree{
 							{Value: factor, Children: []*Tree{{Value: "a"}}},
-							{Value: plus},
-							{
-								Value: factor,
-								Children: []*Tree{
-									{Value: "b"},
-									{Value: times},
-									{Value: "c"},
-								},
-							},
+						},
+					},
+					{Value: plus},
+					{
+						Value: term,
+						Children: []*Tree{
+							{Value: factor, Children: []*Tree{{Value: "b"}}},
+							{Value: times},
+							{Value: factor, Children: []*Tree{{Value: "c"}}},
 						},
 					},
 				},
@@ -159,6 +159,8 @@ func TestT4(t *testing.T) {
 		identifier("a"),
 		fixedString(plus),
 		identifier("b"),
+		fixedString(times),
+		identifier("c"),
 	}
 	r := &Tree{
 		Value: expression,
@@ -174,6 +176,8 @@ func TestT4(t *testing.T) {
 				Value: term,
 				Children: []*Tree{
 					{Value: factor, Children: []*Tree{{Value: "b"}}},
+					{Value: times},
+					{Value: factor, Children: []*Tree{{Value: "c"}}},
 				},
 			},
 		},
@@ -184,7 +188,6 @@ func TestT4(t *testing.T) {
 	require.Equal(t, term, rt.Children[0].Value)
 	require.Equal(t, term, rt.Children[2].Value)
 	require.Equal(t, r, rt)
-
 }
 
 func TestT1(t *testing.T) {
