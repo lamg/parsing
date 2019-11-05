@@ -8,79 +8,182 @@ import (
 )
 
 func TestT0(t *testing.T) {
-	exp := &Symbol{
-		Name: "expression",
-	}
-
-	factor := &Symbol{
-		Name:   "factor",
-		Header: &Symbol{Name: "id", IsTerminal: true},
-		Alt: &Symbol{
-			Header: &Symbol{
-				Name:       "(",
-				IsTerminal: true,
+	exp := basicGrammar()
+	tests := []struct {
+		tks []*Token
+		r   *Tree
+		err error
+	}{
+		{
+			tks: []*Token{
+				identifier("a"),
+				fixedString(times),
+				identifier("b"),
 			},
-			Next: &Symbol{
-				Header: exp,
-				Next: &Symbol{
-					Name:       ")",
-					IsTerminal: true,
+			r: &Tree{
+				Value: expression,
+				Children: []*Tree{
+					{
+						Value: term,
+						Children: []*Tree{
+							{Value: factor, Children: []*Tree{{Value: "a"}}},
+							{Value: times},
+							{Value: factor, Children: []*Tree{{Value: "b"}}},
+						},
+					},
+				},
+			},
+		},
+		{
+			tks: []*Token{
+				identifier("a"),
+				fixedString(plus),
+				identifier("b"),
+			},
+			r: &Tree{
+				Value: expression,
+				Children: []*Tree{
+					{
+						Value: term,
+						Children: []*Tree{
+							{Value: factor, Children: []*Tree{{Value: "a"}}},
+						},
+					},
+					{Value: plus},
+					{
+						Value: term,
+						Children: []*Tree{
+							{Value: factor, Children: []*Tree{{Value: "b"}}},
+						},
+					},
+				},
+			},
+		},
+		{
+			tks: []*Token{
+				identifier("a"),
+				fixedString(plus),
+				identifier("b"),
+				fixedString(times),
+				identifier("c"),
+			},
+			r: &Tree{
+				Value: expression,
+				Children: []*Tree{
+					{
+						Value: term,
+						Children: []*Tree{
+							{Value: factor, Children: []*Tree{{Value: "a"}}},
+							{Value: plus},
+							{
+								Value: factor,
+								Children: []*Tree{
+									{Value: "b"},
+									{Value: times},
+									{Value: "c"},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			tks: []*Token{
+				identifier("a"),
+				fixedString(plus),
+				fixedString(opar),
+				identifier("b"),
+				fixedString(plus),
+				identifier("c"),
+				fixedString(minus),
+				identifier("d"),
+				fixedString(cpar),
+			},
+			r: &Tree{
+				Value: expression,
+				Children: []*Tree{
+					{
+						Value: term,
+						Children: []*Tree{
+							{
+								Value:    factor,
+								Children: []*Tree{{Value: "a"}},
+							},
+							{Value: plus},
+							{
+								Value: factor,
+								Children: []*Tree{
+									{
+										Value: expression,
+										Children: []*Tree{
+											{
+												Value: term,
+												Children: []*Tree{
+													{
+														Value:    factor,
+														Children: []*Tree{{Value: "b"}},
+													},
+													{Value: plus},
+													{
+														Value:    factor,
+														Children: []*Tree{{Value: "c"}},
+													},
+													{Value: minus},
+													{
+														Value:    factor,
+														Children: []*Tree{{Value: "d"}},
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
 				},
 			},
 		},
 	}
-
-	term := &Symbol{
-		Name:   "term",
-		Header: factor,
-		Next: &Symbol{
-			Name:       "*",
-			IsTerminal: true,
-			Alt: &Symbol{
-				Name:       "/",
-				IsTerminal: true,
-				Alt:        Empty,
-			},
-		},
+	for i, j := range tests {
+		tkf := &tkStream{tokens: j.tks}
+		r, e := Parse(exp, tkf)
+		require.Equal(t, j.err, e, "At %d", i)
+		require.Equal(t, j.r, r, "At %d", i)
 	}
-	term.Next.Next = term
-	term.Next.Alt.Next = term
-	exp.Header = term
-	exp.Next = &Symbol{
-		Name:       "+",
-		IsTerminal: true,
-		Next:       term,
-		Alt: &Symbol{
-			Name:       "-",
-			IsTerminal: true,
-			Next:       term,
-			Alt:        Empty,
-		},
-	}
+}
 
+func TestT4(t *testing.T) {
 	tks := []*Token{
-		{Name: "id", Value: "a"},
-		{Name: "*", Value: "*"},
-		{Name: "id", Value: "b"},
+		identifier("a"),
+		fixedString(plus),
+		identifier("b"),
 	}
-	tkf := &tkStream{tokens: tks}
-	r, e := Parse(exp, tkf)
-	require.NoError(t, e)
-	tms := []*Tree{
-		{Value: "factor", Children: []*Tree{{Value: "a"}}},
-		{Value: "*"},
-		{Value: "factor", Children: []*Tree{{Value: "b"}}},
-	}
-	rt := &Tree{
-		Value: "expression",
+	r := &Tree{
+		Value: expression,
 		Children: []*Tree{
 			{
-				Value:    "term",
-				Children: tms,
+				Value: term,
+				Children: []*Tree{
+					{Value: factor, Children: []*Tree{{Value: "a"}}},
+				},
+			},
+			{Value: plus},
+			{
+				Value: term,
+				Children: []*Tree{
+					{Value: factor, Children: []*Tree{{Value: "b"}}},
+				},
 			},
 		},
 	}
-	require.Equal(t, rt, r)
+	tkf := &tkStream{tokens: tks}
+	rt, e := Parse(basicGrammar(), tkf)
+	require.NoError(t, e)
+	require.Equal(t, term, rt.Children[0].Value)
+	require.Equal(t, term, rt.Children[2].Value)
+	require.Equal(t, r, rt)
 
 }
 
@@ -175,4 +278,78 @@ func (s *tkStream) Next() {
 	if s.n != len(s.tokens) {
 		s.n = s.n + 1
 	}
+}
+
+const (
+	expression = "expression"
+	factor     = "factor"
+	term       = "term"
+	id         = "id"
+	plus       = "+"
+	minus      = "-"
+	times      = "*"
+	div        = "/"
+	opar       = "("
+	cpar       = ")"
+)
+
+func basicGrammar() (exp *Symbol) {
+	exp = &Symbol{
+		Name: expression,
+	}
+
+	fact := &Symbol{
+		Name:   factor,
+		Header: &Symbol{Name: id, IsTerminal: true},
+		Alt: &Symbol{
+			Header: &Symbol{
+				Name:       opar,
+				IsTerminal: true,
+			},
+			Next: &Symbol{
+				Header: exp,
+				Next: &Symbol{
+					Name:       cpar,
+					IsTerminal: true,
+				},
+			},
+		},
+	}
+
+	trm := &Symbol{
+		Name:   term,
+		Header: fact,
+		Next: &Symbol{
+			Name:       times,
+			IsTerminal: true,
+			Alt: &Symbol{
+				Name:       div,
+				IsTerminal: true,
+				Alt:        Empty,
+			},
+		},
+	}
+	trm.Next.Next = trm
+	trm.Next.Alt.Next = trm
+	exp.Header = trm
+	exp.Next = &Symbol{
+		Name:       plus,
+		IsTerminal: true,
+		Next:       exp,
+		Alt: &Symbol{
+			Name:       minus,
+			IsTerminal: true,
+			Next:       exp,
+			Alt:        Empty,
+		},
+	}
+	return
+}
+
+func fixedString(s string) *Token {
+	return &Token{Name: s, Value: s}
+}
+
+func identifier(s string) *Token {
+	return &Token{Name: id, Value: s}
 }

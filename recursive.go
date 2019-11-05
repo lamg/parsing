@@ -73,6 +73,7 @@ func Parse(g *Symbol, tks TokenStream) (t *Tree, e error) {
 			curr, e = curr.Alt, nil
 		}
 	}
+	// TODO error handling
 	if errors.Is(e, io.EOF) {
 		e = nil
 	}
