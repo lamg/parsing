@@ -7,150 +7,159 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestT0(t *testing.T) {
-	exp := basicGrammar()
-	tests := []struct {
-		tks []*Token
-		r   *Tree
-		err error
-	}{
-		{
-			tks: []*Token{
-				identifier("a"),
-				fixedString(times),
-				identifier("b"),
-			},
-			r: &Tree{
-				Value: expression,
+type parseTest struct {
+	name string
+	tks  []*Token
+	r    *Tree
+	err  error
+}
+
+var aTimesB = &parseTest{
+	name: "a*b",
+	tks: []*Token{
+		identifier("a"),
+		fixedString(times),
+		identifier("b"),
+	},
+	r: &Tree{
+		Value: expression,
+		Children: []*Tree{
+			{
+				Value: term,
 				Children: []*Tree{
-					{
-						Value: term,
-						Children: []*Tree{
-							{Value: factor, Children: []*Tree{{Value: "a"}}},
-							{Value: times},
-							{Value: factor, Children: []*Tree{{Value: "b"}}},
-						},
-					},
+					{Value: factor, Children: []*Tree{idt("a")}},
+					{Value: times},
+					{Value: factor, Children: []*Tree{idt("b")}},
 				},
 			},
 		},
-		{
-			tks: []*Token{
-				identifier("a"),
-				fixedString(plus),
-				identifier("b"),
-			},
-			r: &Tree{
-				Value: expression,
+	},
+}
+
+var aPlusB = &parseTest{
+	name: "a+b",
+	tks: []*Token{
+		identifier("a"),
+		fixedString(plus),
+		identifier("b"),
+	},
+	r: &Tree{
+		Value: expression,
+		Children: []*Tree{
+			termIdt("a"),
+			{Value: plus},
+			termIdt("b"),
+		},
+	},
+}
+
+var aPlusBTimesC = &parseTest{
+	name: "a+b*c",
+	tks: []*Token{
+		identifier("a"),
+		fixedString(plus),
+		identifier("b"),
+		fixedString(times),
+		identifier("c"),
+	},
+	r: &Tree{
+		Value: expression,
+		Children: []*Tree{
+			termIdt("a"),
+			{Value: plus},
+			{
+				Value: term,
 				Children: []*Tree{
-					{
-						Value: term,
-						Children: []*Tree{
-							{Value: factor, Children: []*Tree{{Value: "a"}}},
-						},
-					},
-					{Value: plus},
-					{
-						Value: term,
-						Children: []*Tree{
-							{Value: factor, Children: []*Tree{{Value: "b"}}},
-						},
-					},
+					{Value: factor, Children: []*Tree{idt("b")}},
+					{Value: times},
+					{Value: factor, Children: []*Tree{idt("c")}},
 				},
 			},
 		},
-		{
-			tks: []*Token{
-				identifier("a"),
-				fixedString(plus),
-				identifier("b"),
-				fixedString(times),
-				identifier("c"),
-			},
-			r: &Tree{
-				Value: expression,
-				Children: []*Tree{
-					{
-						Value: term,
-						Children: []*Tree{
-							{Value: factor, Children: []*Tree{{Value: "a"}}},
-						},
-					},
-					{Value: plus},
-					{
-						Value: term,
-						Children: []*Tree{
-							{Value: factor, Children: []*Tree{{Value: "b"}}},
-							{Value: times},
-							{Value: factor, Children: []*Tree{{Value: "c"}}},
-						},
-					},
-				},
-			},
+	},
+}
+
+var aMinusBPlusC = &parseTest{
+	name: "a-b+c",
+	tks: []*Token{
+		identifier("a"),
+		fixedString(minus),
+		identifier("b"),
+		fixedString(plus),
+		identifier("c"),
+	},
+	r: &Tree{
+		Value: expression,
+		Children: []*Tree{
+			termIdt("a"),
+			{Value: minus},
+			termIdt("b"),
+			{Value: plus},
+			termIdt("c"),
 		},
-		{
-			tks: []*Token{
-				identifier("a"),
-				fixedString(plus),
-				fixedString(opar),
-				identifier("b"),
-				fixedString(plus),
-				identifier("c"),
-				fixedString(minus),
-				identifier("d"),
-				fixedString(cpar),
-			},
-			r: &Tree{
-				Value: expression,
+	},
+}
+
+var aPlusPar = &parseTest{
+
+	name: "a+(b+c-d)",
+	tks: []*Token{
+		identifier("a"),
+		fixedString(plus),
+		fixedString(opar),
+		identifier("b"),
+		fixedString(plus),
+		identifier("c"),
+		fixedString(minus),
+		identifier("d"),
+		fixedString(cpar),
+	},
+	r: &Tree{
+		Value: expression,
+		Children: []*Tree{
+			termIdt("a"),
+			{Value: plus},
+			{
+				Value: term,
 				Children: []*Tree{
 					{
-						Value: term,
+						Value: factor,
 						Children: []*Tree{
+							{Value: opar},
 							{
-								Value:    factor,
-								Children: []*Tree{{Value: "a"}},
-							},
-							{Value: plus},
-							{
-								Value: factor,
+								Value: expression,
 								Children: []*Tree{
-									{
-										Value: expression,
-										Children: []*Tree{
-											{
-												Value: term,
-												Children: []*Tree{
-													{
-														Value:    factor,
-														Children: []*Tree{{Value: "b"}},
-													},
-													{Value: plus},
-													{
-														Value:    factor,
-														Children: []*Tree{{Value: "c"}},
-													},
-													{Value: minus},
-													{
-														Value:    factor,
-														Children: []*Tree{{Value: "d"}},
-													},
-												},
-											},
-										},
-									},
+									termIdt("b"),
+									{Value: plus},
+									termIdt("c"),
+									{Value: minus},
+									termIdt("d"),
 								},
 							},
+							{Value: cpar},
 						},
 					},
 				},
 			},
 		},
+	},
+}
+
+func TestT0(t *testing.T) {
+	exp := basicGrammar()
+	tests := []*parseTest{
+		aTimesB,
+		aPlusB,
+		aPlusBTimesC,
+		aMinusBPlusC,
+		aPlusPar,
 	}
+
 	for i, j := range tests {
 		tkf := &tkStream{tokens: j.tks}
 		r, e := Parse(exp, tkf)
-		require.Equal(t, j.err, e, "At %d", i)
-		require.Equal(t, j.r, r, "At %d", i)
+		require.Equal(t, j.err, e, "At %d, %s", i, j.name)
+		require.Equal(t, j.r, r, "At %d, %s", i, j.name)
 	}
 }
 
@@ -158,26 +167,40 @@ func TestT4(t *testing.T) {
 	tks := []*Token{
 		identifier("a"),
 		fixedString(plus),
+		fixedString(opar),
 		identifier("b"),
-		fixedString(times),
+		fixedString(plus),
 		identifier("c"),
+		fixedString(minus),
+		identifier("d"),
+		fixedString(cpar),
 	}
+
 	r := &Tree{
 		Value: expression,
 		Children: []*Tree{
-			{
-				Value: term,
-				Children: []*Tree{
-					{Value: factor, Children: []*Tree{{Value: "a"}}},
-				},
-			},
+			termIdt("a"),
 			{Value: plus},
 			{
 				Value: term,
 				Children: []*Tree{
-					{Value: factor, Children: []*Tree{{Value: "b"}}},
-					{Value: times},
-					{Value: factor, Children: []*Tree{{Value: "c"}}},
+					{
+						Value: factor,
+						Children: []*Tree{
+							{Value: opar},
+							{
+								Value: expression,
+								Children: []*Tree{
+									termIdt("b"),
+									{Value: plus},
+									termIdt("c"),
+									{Value: minus},
+									termIdt("d"),
+								},
+							},
+							{Value: cpar},
+						},
+					},
 				},
 			},
 		},
@@ -185,8 +208,7 @@ func TestT4(t *testing.T) {
 	tkf := &tkStream{tokens: tks}
 	rt, e := Parse(basicGrammar(), tkf)
 	require.NoError(t, e)
-	require.Equal(t, term, rt.Children[0].Value)
-	require.Equal(t, term, rt.Children[2].Value)
+
 	require.Equal(t, r, rt)
 }
 
@@ -205,35 +227,36 @@ func TestT1(t *testing.T) {
 	r, e := Parse(g, tkf)
 	require.NoError(t, e)
 	rt := &Tree{
-		Value: "letter", Children: []*Tree{{Value: "a"}},
+		Value:    "letter",
+		Children: []*Tree{idt("a")},
 	}
 	require.Equal(t, rt, r)
 }
 
 func TestT2(t *testing.T) {
 	exp := &Symbol{
-		Name: "expression",
+		Name: expression,
 	}
-	factor := &Symbol{
-		Name: "factor",
+	fact := &Symbol{
+		Name: factor,
 		Header: &Symbol{
-			Name:       "id",
+			Name:       id,
 			IsTerminal: true,
 		},
 	}
 	ftail := &Symbol{
-		Name:       "*",
+		Name:       times,
 		IsTerminal: true,
 		Alt: &Symbol{
-			Name:       "/",
+			Name:       div,
 			IsTerminal: true,
 			Alt:        Empty,
 		},
 	}
-	exp.Header = factor
-	factor.Next = ftail
-	ftail.Next = factor
-	ftail.Alt.Next = factor
+	exp.Header = fact
+	fact.Next = ftail
+	ftail.Next = fact
+	ftail.Alt.Next = fact
 
 	tkf := &tkStream{
 		tokens: []*Token{{Value: "a", Name: "id"}},
@@ -241,13 +264,11 @@ func TestT2(t *testing.T) {
 	rt, e := Parse(exp, tkf)
 	require.NoError(t, e)
 	r := &Tree{
-		Value: "expression",
+		Value: expression,
 		Children: []*Tree{
 			{
-				Value: "factor",
-				Children: []*Tree{
-					{Value: "a"},
-				},
+				Value:    factor,
+				Children: []*Tree{idt("a")},
 			},
 		},
 	}
@@ -261,6 +282,49 @@ func TestT3(t *testing.T) {
 	require.NoError(t, e)
 	nt := &Tree{Value: "∅"}
 	require.Equal(t, nt, rt)
+}
+
+func TestT5(t *testing.T) {
+	tks := []*Token{
+		fixedString(opar),
+		identifier("a"),
+		fixedString(cpar),
+	}
+	tkf := &tkStream{tokens: tks}
+	r := &Tree{
+		Value: expression,
+		Children: []*Tree{
+			{
+				Value: term,
+				Children: []*Tree{
+					{
+						Value: factor,
+						Children: []*Tree{
+							{Value: opar},
+							{
+								Value: expression,
+								Children: []*Tree{
+									{
+										Value: term,
+										Children: []*Tree{
+											{
+												Value:    factor,
+												Children: []*Tree{idt("a")},
+											},
+										},
+									},
+								},
+							},
+							{Value: cpar},
+						},
+					},
+				},
+			},
+		},
+	}
+	rt, e := Parse(basicGrammar(), tkf)
+	require.NoError(t, e)
+	require.Equal(t, r, rt)
 }
 
 type tkStream struct {
@@ -297,18 +361,22 @@ const (
 )
 
 func basicGrammar() (exp *Symbol) {
+	// expression = term {("+"|"-") term}.
+	// term = factor {("*"|"/") factor}.
+	// factor = id | "(" expression ")".
 	exp = &Symbol{
 		Name: expression,
 	}
 
 	fact := &Symbol{
-		Name:   factor,
-		Header: &Symbol{Name: id, IsTerminal: true},
+		Name: factor,
+		Header: &Symbol{
+			Name:       id,
+			IsTerminal: true,
+		},
 		Alt: &Symbol{
-			Header: &Symbol{
-				Name:       opar,
-				IsTerminal: true,
-			},
+			Name:       opar,
+			IsTerminal: true,
 			Next: &Symbol{
 				Header: exp,
 				Next: &Symbol{
@@ -355,4 +423,20 @@ func fixedString(s string) *Token {
 
 func identifier(s string) *Token {
 	return &Token{Name: id, Value: s}
+}
+
+func idt(s string) *Tree {
+	return &Tree{Value: id, Children: []*Tree{{Value: s}}}
+}
+
+func termIdt(s string) *Tree {
+	return &Tree{
+		Value: term,
+		Children: []*Tree{
+			{
+				Value:    factor,
+				Children: []*Tree{idt(s)},
+			},
+		},
+	}
 }

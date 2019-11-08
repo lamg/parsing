@@ -34,18 +34,14 @@ func Parse(g *Symbol, tks TokenStream) (t *Tree, e error) {
 	curr := g
 	t = &Tree{Value: curr.Name}
 	for curr != nil && e == nil {
+		var nt *Tree
 		if curr.IsTerminal {
 			if !curr.IsEmpty {
 				var tk *Token
 				tk, e = tks.Current()
 				if e == nil {
 					if curr.Name == tk.Name {
-						if g.IsTerminal {
-							t.Value = tk.Value
-						} else {
-							t.Children = append(t.Children,
-								&Tree{Value: tk.Value})
-						}
+						nt = &Tree{Value: tk.Value}
 						tks.Next()
 					} else {
 						e = &ExpectingErr{
@@ -61,16 +57,18 @@ func Parse(g *Symbol, tks TokenStream) (t *Tree, e error) {
 				}
 			}
 		} else {
-			var nt *Tree
 			nt, e = Parse(curr.Header, tks)
-			if e == nil {
-				t.Children = append(t.Children, nt)
-			}
 		}
 		if e == nil {
 			curr = curr.Next
+			if nt != nil {
+				t.Children = append(t.Children, nt)
+			}
 		} else {
-			curr, e = curr.Alt, nil
+			curr = curr.Alt
+			if curr != nil {
+				e = nil
+			}
 		}
 	}
 	// TODO error handling
