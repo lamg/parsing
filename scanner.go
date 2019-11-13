@@ -17,6 +17,7 @@ type Token struct {
 const (
 	// 0x3 is the end of file character
 	eof = 0x3
+	id  = "id"
 
 	// SupportedToken is the constant representing all supported
 	// tokens when none of them is recognized

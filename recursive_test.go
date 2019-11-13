@@ -284,7 +284,6 @@ const (
 	expression = "expression"
 	factor     = "factor"
 	term       = "term"
-	id         = "id"
 	plus       = "+"
 	minus      = "-"
 	times      = "*"
