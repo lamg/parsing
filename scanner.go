@@ -17,11 +17,13 @@ type Token struct {
 const (
 	// 0x3 is the end of file character
 	eof = 0x3
-	id  = "id"
 
 	// SupportedToken is the constant representing all supported
 	// tokens when none of them is recognized
 	SupportedToken = "supported token"
+	Identifier     = "id"
+	Spaces         = "spaces"
+	EOF            = string(eof)
 )
 
 // ReaderTokens implements the TokenStream interface
@@ -85,6 +87,9 @@ func (r *ReaderTokens) Current() (t *Token, e error) {
 	if errors.Is(r.e, io.EOF) && r.curr != nil {
 		t, r.curr = r.curr, nil
 	} else {
+		if r.curr != nil && e == nil && r.curr.Name == Spaces {
+			r.Next()
+		}
 		t, e = r.curr, r.e
 	}
 	return
@@ -102,7 +107,7 @@ func IdentScan() func(rune) (*Token, bool, bool) {
 		if cont {
 			ident = ident + string(rn)
 		} else if ident != "" {
-			t, prod = &Token{Value: ident, Name: id}, true
+			t, prod = &Token{Value: ident, Name: Identifier}, true
 		}
 		return
 	}
@@ -138,7 +143,7 @@ func SpaceScan() func(rune) (*Token, bool, bool) {
 		}
 		prod = start && !cont
 		if prod {
-			t, start = new(Token), false
+			t, start = &Token{Name: Spaces}, false
 		}
 		return
 	}
@@ -148,8 +153,7 @@ func SpaceScan() func(rune) (*Token, bool, bool) {
 func EOFScan() func(rune) (*Token, bool, bool) {
 	return func(r rune) (t *Token, cont, prod bool) {
 		if r == eof {
-			eofStr := string(eof)
-			t, prod = &Token{Value: eofStr, Name: eofStr}, true
+			t, prod = &Token{Name: EOF, Value: EOF}, true
 		}
 		return
 	}

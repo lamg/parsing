@@ -56,7 +56,7 @@ func parse(g *Symbol, tks TokenStream) (t *Tree, e error) {
 					}
 				} else if errors.Is(e, io.EOF) {
 					e = &UnexpectedEOFErr{
-						After: curr.Name,
+						Expected: curr.Name,
 					}
 				}
 			}
@@ -84,7 +84,6 @@ func parse(g *Symbol, tks TokenStream) (t *Tree, e error) {
 			}
 		}
 	}
-	// TODO error handling
 	if errors.Is(e, io.EOF) {
 		e = nil
 	}
@@ -113,11 +112,11 @@ func (x *ExpectingErr) Error() string {
 // UnexpectedEOFErr is the error signaled when the end of
 // file is reached unexpectedly
 type UnexpectedEOFErr struct {
-	After string
+	Expected string
 }
 
 func (x *UnexpectedEOFErr) Error() string {
-	return fmt.Sprintf("Unexpected EOF after '%s'", x.After)
+	return fmt.Sprintf("Unexpected EOF after '%s'", x.Expected)
 }
 
 // RemainingTokenErr is the error signaled when tokens remain
@@ -136,4 +135,18 @@ var Empty = &Symbol{
 	Name:       "∅",
 	IsEmpty:    true,
 	IsTerminal: true,
+}
+
+func TermTree(s string) *Tree {
+	return &Tree{
+		Value: s,
+		Token: &Token{Name: s, Value: s},
+	}
+}
+
+func IdentTree(s string) *Tree {
+	return &Tree{
+		Value: Identifier,
+		Token: &Token{Name: Identifier, Value: s},
+	}
 }

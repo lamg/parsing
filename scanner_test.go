@@ -12,7 +12,7 @@ func TestScan(t *testing.T) {
 	txt := "true++-*/bla9   x3  (Abla)true"
 	tks := []string{"true",
 		plus, plus, minus, times, div,
-		"bla9", "", "x3", "",
+		"bla9", "x3",
 		opar, "Abla", cpar, "true"}
 	ss := []Scanner{
 		StrScan(plus),

@@ -192,7 +192,7 @@ var eofError = &parseTest{
 	grammar: basicGrammar(),
 	tks:     []*Token{fixedString(opar)},
 	r:       &Tree{Value: expression},
-	err:     &UnexpectedEOFErr{After: opar},
+	err:     &UnexpectedEOFErr{Expected: opar},
 }
 
 var expectingExpr = &parseTest{
@@ -303,7 +303,7 @@ func basicGrammar() (exp *Symbol) {
 	fact := &Symbol{
 		Name: factor,
 		Header: &Symbol{
-			Name:       id,
+			Name:       Identifier,
 			IsTerminal: true,
 		},
 		Alt: &Symbol{
@@ -354,11 +354,11 @@ func fixedString(s string) *Token {
 }
 
 func identifier(s string) *Token {
-	return &Token{Name: id, Value: s}
+	return &Token{Name: Identifier, Value: s}
 }
 
 func idt(s string) *Tree {
-	return &Tree{Value: id, Token: &Token{Name: id, Value: s}}
+	return &Tree{Value: Identifier, Token: &Token{Name: Identifier, Value: s}}
 }
 
 func termIdt(s string) *Tree {
