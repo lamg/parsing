@@ -232,7 +232,7 @@ func TestT0(t *testing.T) {
 	}
 
 	for i, j := range tests {
-		tkf := &tkStream{tokens: j.tks}
+		tkf := &tkStream{tokens: j.tks, n: -1}
 		r, e := Parse(j.grammar, tkf)
 		require.Equal(t, j.err, e, "At %d, %s", i, j.name)
 		require.Equal(t, j.r, r, "At %d, %s", i, j.name)
@@ -250,7 +250,7 @@ func TestT1(t *testing.T) {
 	tks := []*Token{
 		{Name: "id", Value: "a"},
 	}
-	tkf := &tkStream{tokens: tks}
+	tkf := &tkStream{tokens: tks, n: -1}
 	r, e := Parse(g, tkf)
 	require.NoError(t, e)
 	rt := &Tree{

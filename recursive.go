@@ -26,6 +26,7 @@ type Symbol struct {
 
 // Parse parses the grammar in g using the tokens in tks
 func Parse(g *Symbol, tks TokenStream) (t *Tree, e error) {
+	tks.Next()
 	t, e = parse(g, tks)
 	if e == nil {
 		tk, err := tks.Current()
