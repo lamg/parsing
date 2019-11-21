@@ -184,14 +184,12 @@ var aPar = &parseTest{
 var emptyGrammar = &parseTest{
 	name:    "∅",
 	grammar: Empty,
-	r:       &Tree{Value: "∅"},
 }
 
 var eofError = &parseTest{
 	name:    "EOF found",
 	grammar: basicGrammar(),
 	tks:     []*Token{fixedString(opar)},
-	r:       &Tree{Value: expression},
 	err:     &UnexpectedEOFErr{Expected: opar},
 }
 
@@ -199,7 +197,7 @@ var expectingExpr = &parseTest{
 	name:    "Expecting expression",
 	grammar: basicGrammar(),
 	tks:     []*Token{fixedString("X")},
-	r:       &Tree{Value: expression},
+	r:       nil,
 	err: &ExpectingErr{
 		Expected: opar,
 		Actual:   "X",
@@ -210,11 +208,7 @@ var remainingToken = &parseTest{
 	name:    "remaining token",
 	grammar: basicGrammar(),
 	tks:     []*Token{identifier("a"), fixedString("X")},
-	r: &Tree{
-		Value:    expression,
-		Children: []*Tree{termIdt("a")},
-	},
-	err: &RemainingTokenErr{Token: fixedString("X")},
+	err:     &RemainingTokenErr{Token: fixedString("X")},
 }
 
 func TestT0(t *testing.T) {

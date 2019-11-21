@@ -1,6 +1,7 @@
 package parsing
 
 import (
+	"io"
 	"strings"
 	"testing"
 
@@ -62,4 +63,27 @@ func TestIdentScan(t *testing.T) {
 	_, cont, prod = ids0(' ')
 	require.False(t, cont)
 	require.False(t, prod)
+}
+
+func TestScanEOF(t *testing.T) {
+	p := "- b - a"
+	ss := []Scanner{IdentScan, SpaceScan, StrScan(minus)}
+	tks := NewReaderTokens(strings.NewReader(p), ss)
+	ks := []struct {
+		k *Token
+		e error
+	}{
+		{k: fixedString(minus)},
+		{k: identifier("b")},
+		{k: fixedString(minus)},
+		{k: identifier("a")},
+		{e: io.EOF},
+	}
+	inf := func(i int) {
+		tks.Next()
+		k, e := tks.Current()
+		require.Equal(t, ks[i].k, k, "At %d", i)
+		require.Equal(t, ks[i].e, e, "At %d", i)
+	}
+	alg.Forall(inf, len(ks))
 }

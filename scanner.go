@@ -53,6 +53,9 @@ func NewReaderTokens(rd io.Reader,
 
 // Next is the TokenStream.Next implementation
 func (r *ReaderTokens) Next() {
+	if r.end {
+		r.curr = nil
+	}
 	for !r.end {
 		if r.read {
 			r.rn, _, r.e = r.rd.ReadRune()
@@ -64,12 +67,13 @@ func (r *ReaderTokens) Next() {
 			r.read, r.search = false, !r.scan
 		} else if r.search {
 			if r.n == len(r.ss) {
-				r.e, r.end =
-					&ExpectingErr{
+				if r.rn != eof {
+					r.e = &ExpectingErr{
 						Actual:   string(r.rn),
 						Expected: SupportedToken,
-					},
-					true
+					}
+				}
+				r.end = true
 			} else {
 				r.sc, r.n, r.search = r.ss[r.n](), r.n+1, false
 			}
@@ -84,14 +88,15 @@ func (r *ReaderTokens) Next() {
 
 // Current is the TokenStream.Current implementation
 func (r *ReaderTokens) Current() (t *Token, e error) {
-	if errors.Is(r.e, io.EOF) && r.curr != nil {
-		t, r.curr = r.curr, nil
-	} else {
-		if r.curr != nil && e == nil && r.curr.Name == Spaces {
-			r.Next()
-		}
-		t, e = r.curr, r.e
+	if r.curr != nil && e == nil && r.curr.Name == Spaces {
+		r.Next()
 	}
+	if errors.Is(r.e, io.EOF) && r.curr != nil {
+		e = nil
+	} else {
+		e = r.e
+	}
+	t = r.curr
 	return
 }
 

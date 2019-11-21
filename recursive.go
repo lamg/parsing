@@ -31,62 +31,78 @@ func Parse(g *Symbol, tks TokenStream) (t *Tree, e error) {
 	if e == nil {
 		tk, err := tks.Current()
 		if err == nil {
-			e = &RemainingTokenErr{Token: tk}
+			t, e = nil, &RemainingTokenErr{Token: tk}
 		}
+	}
+	if errors.Is(e, io.EOF) {
+		e = nil
 	}
 	return
 }
 
 func parse(g *Symbol, tks TokenStream) (t *Tree, e error) {
-	curr := g
-	t = &Tree{Value: curr.Name}
-	for curr != nil && e == nil {
+	curr, parsed, match := g, []*Tree{}, false
+	for curr != nil {
 		var nt *Tree
-		var tk *Token
 		if curr.IsTerminal {
-			if !curr.IsEmpty {
-				tk, e = tks.Current()
-				if e == nil {
-					if curr.Name == tk.Name {
-						tks.Next()
-					} else {
-						e = &ExpectingErr{
-							Expected: curr.Name,
-							Actual:   tk.Name,
-						}
-					}
-				} else if errors.Is(e, io.EOF) {
-					e = &UnexpectedEOFErr{
-						Expected: curr.Name,
-					}
-				}
-			}
+			nt, e = matchTk(tks, curr)
 		} else {
 			nt, e = parse(curr.Header, tks)
 		}
-		if e == nil {
-			if nt != nil {
-				t.Children = append(t.Children, nt)
-			} else if tk != nil {
-				if g.IsTerminal {
-					t.Token = tk
-				} else {
-					t.Children = append(t.Children,
-						&Tree{Value: tk.Name, Token: tk})
-				}
+		match = nt != nil
+		if match {
+			if nt.Value != Empty.Name {
+				parsed = append(parsed, nt)
 			}
 			curr = curr.Next
 		} else {
 			curr = curr.Alt
-			var xe *ExpectingErr
-			if curr != nil &&
-				!(errors.As(e, &xe) && xe.Expected == SupportedToken) {
-				e = nil
-			}
 		}
 	}
-	if errors.Is(e, io.EOF) {
-		e = nil
+	if match {
+		t = build(parsed, g)
+	}
+	return
+}
+
+func build(parsed []*Tree, root *Symbol) (t *Tree) {
+	if !root.IsTerminal {
+		t = &Tree{Value: root.Name, Children: parsed}
+	} else if len(parsed) != 0 {
+		t = parsed[0]
+		if len(parsed) != 1 {
+			t.Children = parsed[1:]
+		}
+	}
+	return
+}
+
+func matchTk(tks TokenStream, s *Symbol) (r *Tree, e error) {
+	var tk *Token
+	tk, e = tks.Current()
+	eof := errors.Is(e, io.EOF)
+	if e == nil {
+		if s.Name == tk.Name {
+			r = &Tree{Value: tk.Name, Token: tk}
+			tks.Next()
+		} else {
+			if s.IsEmpty {
+				r = &Tree{Value: s.Name}
+			} else {
+				e = &ExpectingErr{
+					Expected: s.Name,
+					Actual:   tk.Name,
+				}
+			}
+		}
+	} else if eof {
+		if s.IsEmpty {
+			r = &Tree{Value: s.Name}
+		} else {
+			e = &UnexpectedEOFErr{
+				Expected: s.Name,
+			}
+		}
 	}
 	return
 }
@@ -117,7 +133,7 @@ type UnexpectedEOFErr struct {
 }
 
 func (x *UnexpectedEOFErr) Error() string {
-	return fmt.Sprintf("Unexpected EOF after '%s'", x.Expected)
+	return fmt.Sprintf("Unexpected EOF, expecting '%s'", x.Expected)
 }
 
 // RemainingTokenErr is the error signaled when tokens remain
