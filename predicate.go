@@ -45,51 +45,35 @@ const (
 	FollowsOp      = "⇐" // C-k <=
 )
 
-func grammar() (s *Symbol) {
-	s = &Symbol{Name: pred}
-	fct := &Symbol{
-		Name: factor,
-		Header: &Symbol{
-			Name:       NotOp,
-			IsTerminal: true,
-			Alt:        Empty,
-		},
-		Next: &Symbol{
-			Name:       id,
-			IsTerminal: true,
-			Alt: &Symbol{
-				Name:       opar,
-				IsTerminal: true,
-				Next: &Symbol{
-					Header: s,
-					Next: &Symbol{
-						Name:       cpar,
-						IsTerminal: true,
-					},
-				},
-			},
-		},
-	}
-	junct := optTail(junction, OrOp, AndOp, fct)
-	println("ok")
-	trm := optTail(term, ImpliesOp, FollowsOp, junct)
-	s.Header = trm
-	s.Next = &Symbol{
-		Header: &Symbol{
-			Header: &Symbol{
-				Name:       EquivalesOp,
-				IsTerminal: true,
-				Alt: &Symbol{
-					Name:       NotEquivalesOp,
-					IsTerminal: true,
-				},
-			},
-			Next: trm,
-		},
-		Alt: Empty,
-	}
-	s.Next.Next = s.Next
-	return
+var predGrammar = []Symbol{
+	{},                               //0
+	Empty,                            //1
+	{Name: pred, Header: 3, Next: 4}, //2
+	{Name: term, Header: 5, Next: 6}, //3
+	{
+		Name:       EquivalesOp,
+		IsTerminal: true,
+		Next:       3,
+		Alt:        7,
+	}, //4
+	{
+		Name:   junction,
+		Header: 8,
+		Next:   9,
+	}, // 5
+	{
+		Name:       ImpliesOp,
+		IsTerminal: true,
+		Next:       10,
+		Alt:        11,
+	}, //6
+	{
+		Name:       NotEquivalesOp,
+		IsTerminal: true,
+		Next:       3,
+		Alt:        1,
+	}, // 7
+
 }
 
 const (
@@ -99,33 +83,6 @@ const (
 	negation = "negation"
 	tail     = "tail"
 )
-
-func tailSymbol(op string,
-	next *Symbol) (t *Symbol) {
-	t = &Symbol{
-		Name: tail,
-		Header: &Symbol{
-			Name:       op,
-			IsTerminal: true,
-			Next:       next,
-			Alt:        Empty,
-		},
-	}
-	t.Next = t
-	return
-}
-
-func optTail(name, tail0, tail1 string,
-	header *Symbol) (r *Symbol) {
-	t0, t1 := tailSymbol(tail0, header), tailSymbol(tail1, header)
-	t0.Alt = t1
-	r = &Symbol{
-		Name:   name,
-		Header: header,
-		Next:   t0,
-	}
-	return
-}
 
 // ParsePred parses a predicate
 func ParsePred(s string) (t *Tree, e error) {
@@ -144,6 +101,6 @@ func ParsePred(s string) (t *Tree, e error) {
 		StrScan(cpar),
 	}
 	tk := NewReaderTokens(rd, ss)
-	t, e = Parse(grammar(), tk)
+	t, e = Parse(predGrammar, tk)
 	return
 }
