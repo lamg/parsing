@@ -59,12 +59,12 @@ func parse(grammar []Symbol, curr int, tks TokenStream) (t *Tree, e error) {
 		}
 	}
 	if match {
-		t = build(parsed, &grammar[curr])
+		t = build(parsed)
 	}
 	return
 }
 
-func build(parsed []*Tree, root *Symbol) (t *Tree) {
+func build(parsed []*Tree) (t *Tree) {
 	if len(parsed) != 0 {
 		t = parsed[0]
 		if len(parsed) != 1 {

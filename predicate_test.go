@@ -21,22 +21,12 @@
 package parsing
 
 import (
+	"strings"
 	"testing"
 
 	alg "github.com/lamg/algorithms"
 	"github.com/stretchr/testify/require"
 )
-
-func TestFuncPointer(t *testing.T) {
-	var f func()
-	g := func() {
-		f()
-	}
-	a := false
-	f = func() { a = true }
-	g()
-	require.True(t, a)
-}
 
 type testParse struct {
 	p string
@@ -104,4 +94,64 @@ func TestParse(t *testing.T) {
 		}
 	}
 	alg.Forall(inf, len(ps))
+}
+
+func TestTail(t *testing.T) {
+	// '⇒' id {'⇒' id}.
+	g := []Symbol{
+		{},                                   // 0
+		Empty,                                // 1
+		{Name: junction, Header: 3, Next: 4}, // 2
+		{Name: ImpliesOp, IsTerminal: true},  // 3
+		{Name: "", Header: 5, Next: 6},       // 4
+		{Name: Identifier, IsTerminal: true}, // 5
+		{Name: ImpliesOp, IsTerminal: true, Next: 4, Alt: 1}, //6
+	}
+	ss := []Scanner{
+		IdentScan,
+		SpaceScan,
+		StrScan(ImpliesOp),
+	}
+	ts := []testParse{
+		{
+			p: "⇒ a ⇒ b",
+			t: &Tree{
+				Token: fixedString(ImpliesOp),
+				Children: []*Tree{
+					IdentTree("a"),
+					TermTree(ImpliesOp),
+					IdentTree("b"),
+				},
+			},
+		},
+		{
+			p: "⇒ a",
+			t: &Tree{
+				Token:    fixedString(ImpliesOp),
+				Children: []*Tree{IdentTree("a")},
+			},
+		},
+		{
+			p: "a",
+			e: &ExpectingErr{
+				Expected: ImpliesOp,
+				Actual:   Identifier,
+			},
+		},
+		{
+			p: "⇒",
+			e: &UnexpectedEOFErr{Expected: Identifier},
+		},
+		{
+			p: "⇒ a ⇒",
+			e: &UnexpectedEOFErr{Expected: Identifier},
+		},
+	}
+	for i, j := range ts {
+		rd := strings.NewReader(j.p)
+		tk := NewReaderTokens(rd, ss)
+		r, e := Parse(g, tk)
+		require.Equal(t, j.e, e)
+		require.Equal(t, j.t, r, "At %d: %s", i, j.p)
+	}
 }

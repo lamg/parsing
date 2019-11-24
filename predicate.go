@@ -46,27 +46,27 @@ const (
 )
 
 var predGrammar = []Symbol{
-	{},                               //0
-	Empty,                            //1
-	{Name: pred, Header: 3, Next: 4}, //2
-	{Name: term, Header: 5, Next: 6}, //3
+	{},                               // 0
+	Empty,                            // 1
+	{Name: pred, Header: 3},          // 2
+	{Name: "", Header: 4, Next: 5},   // 3
+	{Name: term, Header: 6, Next: 7}, // 4
 	{
 		Name:       EquivalesOp,
 		IsTerminal: true,
 		Next:       3,
-		Alt:        7,
-	}, //4
+		Alt:        8,
+	}, // 5
 	{
 		Name:   junction,
-		Header: 8,
-		Next:   9,
-	}, // 5
+		Header: 9,
+	}, // 6
 	{
 		Name:       ImpliesOp,
 		IsTerminal: true,
 		Next:       10,
 		Alt:        11,
-	}, //6
+	}, // 7
 	{
 		Name:       NotEquivalesOp,
 		IsTerminal: true,
