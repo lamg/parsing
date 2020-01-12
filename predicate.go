@@ -48,32 +48,22 @@ const (
 var predGrammar = []Symbol{
 	{},                               // 0
 	Empty,                            // 1
-	{Name: pred, Header: 3},          // 2
-	{Name: "", Header: 4, Next: 5},   // 3
-	{Name: term, Header: 6, Next: 7}, // 4
-	{
-		Name:       EquivalesOp,
-		IsTerminal: true,
-		Next:       3,
-		Alt:        8,
-	}, // 5
-	{
-		Name:   junction,
-		Header: 9,
-	}, // 6
-	{
-		Name:       ImpliesOp,
-		IsTerminal: true,
-		Next:       10,
-		Alt:        11,
-	}, // 7
-	{
-		Name:       NotEquivalesOp,
-		IsTerminal: true,
-		Next:       3,
-		Alt:        1,
-	}, // 7
+	{Name: pred, Header: 5, Next: 3}, // 2
+	{Name: EquivalesOp, IsTerminal: true, Next: 5, Alt: 4},    // 3
+	{Name: NotEquivalesOp, IsTerminal: true, Next: 5, Alt: 1}, // 4
 
+	{Name: term, Header: 0, Next: 0}, // 5
+
+	{Name: "", Header: 7},                     // 4
+	{Name: junction, Header: 9, Next: 10},     // 5
+	{Name: "", Header: 11, Next: 12, Alt: 13}, // 6
+	{Name: EquivalesOp, Next: 4, Alt: 8},      // 7
+	{Name: NotEquivalesOp, Next: 4, Alt: 1},   // 8
+	{},                                        // 9
+	{},                                        // 10
+	{Name: ImpliesOp, IsTerminal: true, Next: 5}, // 11
+	{Name: "", Next: 14, Alt: 1},                 // 12
+	{Name: "", Header: 15, Next: 16},             // 13
 }
 
 const (
