@@ -20,6 +20,10 @@
 
 package parsing
 
+import (
+	"io"
+)
+
 const (
 	production = "production"
 	syntax     = "syntax"
@@ -27,6 +31,19 @@ const (
 	dot        = "."
 	bar        = "|"
 )
+
+/*
+syntax = {production}.
+production = identifier "=" expression ".".
+expression = term {"|" term}.
+term = factor {factor}.
+factor = identifier | string | "(" expression ")" | "[" expression "]" | "{" expression "}".
+
+identifier = letter {letter | digit}.
+string = """ {character} """.
+letter = "A" | ... | "Z".
+digit = "0" | ... | "9".
+*/
 
 var ebnfGrammar = []Symbol{
 	{},
