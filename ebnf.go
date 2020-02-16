@@ -41,24 +41,75 @@ factor = identifier | string | "(" expression ")" | "[" expression "]" | "{" exp
 
 identifier = letter {letter | digit}.
 string = """ {character} """.
-letter = "A" | ... | "Z".
-digit = "0" | ... | "9".
+
+TODO algoritmo para generar la tabla a partir de la gramática
+- si es un factor entonces referencia a Next
+- si es un término entonces referencia a Alt
+- si es un no terminal entonces referencia a Header
+- repetición: header: elemento a repetir, next: autoreferencia, alt: vacío
 */
 
-var ebnfGrammar = []Symbol{
-	{},
-	Empty,
-	{Name: syntax, Header: 3, Next: 2, Alt: 1},    // 2
-	{Name: production, Header: 4, Next: 5},        // 3
-	{Name: Identifier, IsTerminal: true, Next: 4}, // 4
-	{Name: EqualOp, IsTerminal: true, Next: 5},    // 5
-	{Name: expression, Header: 6, Next: 7},        //
-	{Name: term, Header: 8, Next: 9},              //
-	{},
+var syntaxSym = []Symbol{
+	{Name: "syntax", Header: 3, Next: 2, Alt: 1},
+}
 
-	{Name: "", Header: 8, Next: 9}, // 6
-	{Name: dot, IsTerminal: true},  // 7
-	{Name: bar, IsTerminal: true, Next: 7},
+var productionSym = []Symbol{
+	{Name: "production", Header: 3},
+	{Name: "identifier", Next: 4},
+	{Name: "=", Next: 5},
+	{Name: "expression", Header: 7, Next: 6},
+	{Name: "."},
+}
+
+var expressionSym = []Symbol{
+	{Name: "term", Header: 5, Next: 3},
+	{Name: "", Header: 4, Next: 3, Alt: 0},
+	{Name: "|", Next: 2},
+}
+
+var termSym = []Symbol{
+	{Name: "factor", Header: 3, Next: 2},
+	{Name: "", Header: 1, Next: 2, Alt: 0},
+}
+
+var factorSym = []Symbol{
+	{Name: "", Header: 3},
+	{Name: "identifier", Alt: 4},
+	{Name: "string", Alt: 5},
+	{Name: "parenthesesExpression", Header: 8, Alt: 6},
+	{Name: "bracketExpression", Header: 9, Alt: 7},
+	{Name: "bracesExpression", Header: 10},
+}
+
+var parExp = groupExpr("parenthesesExpression", "(", ")")
+var bracketExp = groupExpr("bracketExpression", "[", "]")
+var bracesExp = groupExpr("bracesExpression", "{", "}")
+
+func groupExpr(name, open, close string) []Symbol {
+	return []Symbol{
+		{Name: name, Header: 3},
+		{Name: open, Next: 4},
+		{Name: "expression", Header: 6, Next: 5},
+		{Name: close},
+	}
+}
+
+func assemble() (ebnf []Symbol) {
+	subexp := [][]Symbol{
+		syntaxSym,
+		productionSym,
+		expressionSym,
+		termSym,
+		factorSym,
+		parExp,
+		bracketExp,
+		bracesExp,
+	}
+	ebnf = []Symbol{{}, Empty}
+	for _, j := range subexp {
+
+	}
+	return
 }
 
 func Translate(rd io.Reader) (r []Symbol, e error) {
