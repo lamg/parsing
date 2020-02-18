@@ -106,8 +106,27 @@ func assemble() (ebnf []Symbol) {
 		bracesExp,
 	}
 	ebnf = []Symbol{{}, Empty}
+	currPos := 0
 	for _, j := range subexp {
+		var startPos int
+		startPos, currPos = currPos, currPos+len(j)
+		for k := range j {
+			noffs := newOffsets(startPos, j[k].Header, j[k].Next, j[k].Alt)
+			j[k].Header, j[k].Next, j[k].Alt = noffs[0], noffs[1], noffs[2]
+		}
+	}
+	for _, j := range subexp {
+		ebnf = append(ebnf, j...)
+	}
+	return
+}
 
+func newOffsets(startPos int, positions ...int) (r []int) {
+	r = make([]int, len(positions))
+	for i, j := range positions {
+		if j != 0 && j != 1 {
+			r[i] = startPos + j
+		}
 	}
 	return
 }
